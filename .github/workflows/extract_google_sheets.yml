@@ -38,9 +38,10 @@ jobs:
 
       # Esta etapa será utilizada quando criarmos o Secret
       - name: Criar credentials.json
-        if: ${{ secrets.GOOGLE_CREDENTIALS != '' }}
         run: |
-          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
+          cat <<EOF > credentials.json
+          ${{ secrets.GOOGLE_CREDENTIALS }}
+          EOF
 
       - name: Executar extração
         run: |
@@ -50,3 +51,9 @@ jobs:
         run: |
           echo "Conteúdo da pasta raw:"
           ls -lah raw
+
+      - name: Publicar arquivos da camada Raw
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-data
+          path: raw/

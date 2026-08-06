@@ -1,0 +1,9 @@
+google_sheets:
+
+  respostas_novas:
+    spreadsheet_id: "1m4evQBXurEd-UFL6L0ovzIPkogH2J4ZM8hchpc8P9Jc"
+    worksheet: "Respostas ao formulário 1"
+
+  respostas_antigas:
+    spreadsheet_id: "19RfiWt22jZTisgCAMXpeuH4RIUdyjfwjGnYh7ZzO0eg"
+    worksheet: "Respostas ao formulário 1"

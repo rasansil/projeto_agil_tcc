@@ -66,6 +66,10 @@ for nome, info in config["google_sheets"].items():
 
     destino = RAW_PATH / f"{nome}.parquet"
 
+    # Converter todas as colunas object para string
+    for coluna in df.select_dtypes(include=["object"]).columns:
+        df[coluna] = df[coluna].astype(str)
+
     df.to_parquet(destino, index=False)
 
     print(f"Arquivo salvo em {destino}")
