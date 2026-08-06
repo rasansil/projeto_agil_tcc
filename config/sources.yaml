@@ -1,9 +1,9 @@
 google_sheets:
 
-  respostas:
-    spreadsheet_id: "COLOQUE_O_ID_DA_PLANILHA"
-    worksheet: "Respostas"
+  respostas_novas:
+    spreadsheet_id: "1m4evQBXurEd-UFL6L0ovzIPkogH2J4ZM8hchpc8P9Jc"
+    worksheet: "Respostas ao formulário 1"
 
-  empresas:
-    spreadsheet_id: "COLOQUE_O_ID_DA_PLANILHA"
-    worksheet: "Empresas"
+  respostas_antigas:
+    spreadsheet_id: "1jbM9EsXt4m9-aSqwu8hweLHk2Xu5yMHk"
+    worksheet: "Respostas ao formulário 1"
