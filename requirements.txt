@@ -1,0 +1,11 @@
+pandas>=2.2
+
+pyarrow>=17.0
+
+gspread>=6.0
+
+google-auth>=2.35
+
+PyYAML>=6.0
+
+openpyxl>=3.1
