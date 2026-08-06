@@ -1,0 +1,9 @@
+google_sheets:
+
+  respostas:
+    spreadsheet_id: "COLOQUE_O_ID_DA_PLANILHA"
+    worksheet: "Respostas"
+
+  empresas:
+    spreadsheet_id: "COLOQUE_O_ID_DA_PLANILHA"
+    worksheet: "Empresas"
