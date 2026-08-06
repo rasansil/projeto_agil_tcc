@@ -37,10 +37,10 @@ jobs:
           pip install -r requirements.txt
 
       # Esta etapa será utilizada quando criarmos o Secret
-      - name: Criar credentials.json
-        if: ${{ secrets.GOOGLE_CREDENTIALS != '' }}
-        run: |
-          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
+      #- name: Criar credentials.json
+        #if: ${{ secrets.GOOGLE_CREDENTIALS != '' }}
+        #run: |
+          #echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
 
       - name: Executar extração
         run: |
