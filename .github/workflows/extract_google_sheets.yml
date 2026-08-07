@@ -7,14 +7,15 @@ on:
     branches:
       - dev
     paths:
-      - "scripts/00_extract_google_sheets.py"
-      - "config/sources.yaml"
+      - "scripts/**"
+      - "utils/**"
+      - "config/**"
       - "requirements.txt"
       - ".github/workflows/extract_google_sheets.yml"
 
 jobs:
 
-  extract:
+  pipeline:
 
     runs-on: ubuntu-latest
 
@@ -36,24 +37,75 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Esta etapa será utilizada quando criarmos o Secret
       - name: Criar credentials.json
         run: |
           cat <<EOF > credentials.json
           ${{ secrets.GOOGLE_CREDENTIALS }}
           EOF
 
-      - name: Executar extração
+      ##################################################
+      # Camada Raw
+      ##################################################
+
+      - name: Extrair dados do Google Sheets
         run: |
           python scripts/00_extract_google_sheets.py
 
-      - name: Mostrar arquivos gerados
-        run: |
-          echo "Conteúdo da pasta raw:"
-          ls -lah raw
+      ##################################################
+      # Camada Bronze
+      ##################################################
 
-      - name: Publicar arquivos da camada Raw
+      - name: Raw -> Bronze
+        run: |
+          python scripts/01_raw_to_bronze.py
+
+      ##################################################
+      # Camada Silver
+      ##################################################
+
+      - name: Bronze -> Silver
+        run: |
+          python scripts/02_bronze_to_silver.py
+
+      ##################################################
+      # Mostrar arquivos gerados
+      ##################################################
+
+      - name: Listar arquivos gerados
+        run: |
+          echo "========== RAW =========="
+          ls -lah raw || true
+
+          echo ""
+          echo "======== BRONZE ========="
+          ls -lah bronze || true
+
+          echo ""
+          echo "======== SILVER ========="
+          ls -lah silver || true
+
+          echo ""
+          echo "======== DATABASE ======="
+          ls -lah database || true
+
+      ##################################################
+      # Publicar Artefatos
+      ##################################################
+
+      - name: Publicar camada Raw
         uses: actions/upload-artifact@v4
         with:
           name: raw-data
           path: raw/
+
+      - name: Publicar camada Bronze
+        uses: actions/upload-artifact@v4
+        with:
+          name: bronze-data
+          path: bronze/
+
+      - name: Publicar camada Silver
+        uses: actions/upload-artifact@v4
+        with:
+          name: silver-data
+          path: silver/
