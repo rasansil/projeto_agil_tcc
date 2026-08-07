@@ -11,6 +11,12 @@ Responsabilidade:
 """
 
 from pathlib import Path
+import sys
+
+# Adiciona a raiz do projeto ao PYTHONPATH
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
 import yaml
 import pandas as pd
 import gspread
