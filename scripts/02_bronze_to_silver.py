@@ -1,40 +1,102 @@
 from pathlib import Path
 
-import duckdb
 import pandas as pd
 
+from utils.database import (
+    get_connection,
+    create_schemas,
+    publish_dataframe,
+    close_connection
+)
+
+# ======================================================
+# Configurações
+# ======================================================
+
+RAW_PATH = Path("raw")
 BRONZE_PATH = Path("bronze")
-SILVER_PATH = Path("silver")
-DATABASE = "database/dev_duckdb.duckdb"
 
-SILVER_PATH.mkdir(exist_ok=True)
+BRONZE_PATH.mkdir(exist_ok=True)
 
-con = duckdb.connect(DATABASE)
+# ======================================================
+# Conexão com o DuckDB
+# ======================================================
 
-con.execute("""
-CREATE SCHEMA IF NOT EXISTS silver;
-""")
+con = get_connection()
 
-for arquivo in BRONZE_PATH.glob("*.parquet"):
+create_schemas(con)
 
-    df = pd.read_parquet(arquivo)
+print("=" * 60)
+print("INICIANDO CAMADA BRONZE")
+print("=" * 60)
 
-    nome = arquivo.stem
+# ======================================================
+# Processamento
+# ======================================================
 
-    destino = SILVER_PATH / arquivo.name
+arquivos = list(RAW_PATH.glob("*"))
 
-    df.to_parquet(destino, index=False)
+if len(arquivos) == 0:
+    print("Nenhum arquivo encontrado na camada Raw.")
+else:
 
-    con.register("df_temp", df)
+    for arquivo in arquivos:
 
-    con.execute(f"""
-        CREATE OR REPLACE TABLE silver.{nome} AS
-        SELECT *
-        FROM df_temp
-    """)
+        print(f"\nLendo arquivo: {arquivo.name}")
 
-    print(f"Tabela silver.{nome} criada")
+        # --------------------------
+        # Leitura
+        # --------------------------
 
-con.close()
+        if arquivo.suffix.lower() == ".csv":
 
-print("Camada Silver concluída.")
+            df = pd.read_csv(arquivo)
+
+        elif arquivo.suffix.lower() == ".parquet":
+
+            df = pd.read_parquet(arquivo)
+
+        else:
+
+            print(f"Arquivo ignorado: {arquivo.name}")
+            continue
+
+        # --------------------------
+        # Padronização simples
+        # --------------------------
+
+        for coluna in df.select_dtypes(include=["object"]).columns:
+            df[coluna] = df[coluna].fillna("").astype(str)
+
+        # --------------------------
+        # Salva Bronze
+        # --------------------------
+
+        nome_tabela = arquivo.stem
+
+        destino = BRONZE_PATH / f"{nome_tabela}.parquet"
+
+        df.to_parquet(destino, index=False)
+
+        # --------------------------
+        # Publica DuckDB
+        # --------------------------
+
+        publish_dataframe(
+            con=con,
+            dataframe=df,
+            schema="bronze",
+            table=nome_tabela
+        )
+
+        print(f"Tabela bronze.{nome_tabela} criada.")
+        print(f"Arquivo salvo em {destino}")
+        print(f"Registros: {len(df)}")
+
+# ======================================================
+# Encerramento
+# ======================================================
+
+close_connection(con)
+
+print("\nCamada Bronze finalizada com sucesso.")
