@@ -1,49 +1,26 @@
-from pathlib import Path
+from sqlalchemy import create_engine
+import pandas as pd
 
-import duckdb
+SERVER = "localhost"
+DATABASE = "ProjetoAgilTCC"
 
+CONNECTION_STRING = (
+    f"mssql+pyodbc://{SERVER}/{DATABASE}"
+    "?driver=ODBC+Driver+17+for+SQL+Server"
+    "&trusted_connection=yes"
+)
 
-DATABASE_PATH = Path("database/dev_duckdb.duckdb")
-
-
-def get_connection():
-    """
-    Cria uma conexão com o banco DuckDB.
-    Caso o banco não exista, ele será criado automaticamente.
-    """
-
-    DATABASE_PATH.parent.mkdir(exist_ok=True)
-
-    return duckdb.connect(str(DATABASE_PATH))
+engine = create_engine(CONNECTION_STRING)
 
 
-def create_schemas(con):
-    """
-    Cria os schemas da arquitetura Medalhão.
-    """
+def publish_dataframe(df: pd.DataFrame,
+                      schema: str,
+                      table: str):
 
-    con.execute("CREATE SCHEMA IF NOT EXISTS bronze;")
-    con.execute("CREATE SCHEMA IF NOT EXISTS silver;")
-    con.execute("CREATE SCHEMA IF NOT EXISTS gold;")
-
-
-def publish_dataframe(con, dataframe, schema, table):
-    """
-    Publica um DataFrame como tabela no DuckDB.
-    """
-
-    con.register("df_temp", dataframe)
-
-    con.execute(f"""
-        CREATE OR REPLACE TABLE {schema}.{table} AS
-        SELECT *
-        FROM df_temp
-    """)
-
-
-def close_connection(con):
-    """
-    Fecha a conexão com o banco.
-    """
-
-    con.close()
+    df.to_sql(
+        name=table,
+        con=engine,
+        schema=schema,
+        if_exists="replace",
+        index=False
+    )
