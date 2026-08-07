@@ -1,4 +1,4 @@
-name: Extract Google Sheets
+name: Pipeline Medalhão
 
 on:
   workflow_dispatch:
@@ -6,16 +6,15 @@ on:
   push:
     branches:
       - dev
-    paths:
-      - "scripts/**"
-      - "utils/**"
-      - "config/**"
-      - "requirements.txt"
-      - ".github/workflows/extract_google_sheets.yml"
 
 jobs:
 
-  pipeline:
+  # ==========================================================
+  # JOB 1 - EXTRAÇÃO (RAW)
+  # ==========================================================
+  raw:
+
+    name: 01 - Google Sheets -> Raw
 
     runs-on: ubuntu-latest
 
@@ -43,69 +42,111 @@ jobs:
           ${{ secrets.GOOGLE_CREDENTIALS }}
           EOF
 
-      ##################################################
-      # Camada Raw
-      ##################################################
-
       - name: Extrair dados do Google Sheets
         run: |
           python scripts/00_extract_google_sheets.py
 
-      ##################################################
-      # Camada Bronze
-      ##################################################
-
-      - name: Raw -> Bronze
+      - name: Verificar camada Raw
         run: |
-          python scripts/01_raw_to_bronze.py
+          echo "===== RAW ====="
+          ls -lah raw
 
-      ##################################################
-      # Camada Silver
-      ##################################################
-
-      - name: Bronze -> Silver
-        run: |
-          python scripts/02_bronze_to_silver.py
-
-      ##################################################
-      # Mostrar arquivos gerados
-      ##################################################
-
-      - name: Listar arquivos gerados
-        run: |
-          echo "========== RAW =========="
-          ls -lah raw || true
-
-          echo ""
-          echo "======== BRONZE ========="
-          ls -lah bronze || true
-
-          echo ""
-          echo "======== SILVER ========="
-          ls -lah silver || true
-
-          echo ""
-          echo "======== DATABASE ======="
-          ls -lah database || true
-
-      ##################################################
-      # Publicar Artefatos
-      ##################################################
-
-      - name: Publicar camada Raw
+      - name: Publicar Raw
         uses: actions/upload-artifact@v4
         with:
           name: raw-data
           path: raw/
 
-      - name: Publicar camada Bronze
+
+  # ==========================================================
+  # JOB 2 - BRONZE
+  # ==========================================================
+  bronze:
+
+    name: 02 - Raw -> Bronze
+
+    needs: raw
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Baixar Raw
+        uses: actions/download-artifact@v4
+        with:
+          name: raw-data
+          path: raw
+
+      - name: Executar Bronze
+        run: |
+          python scripts/01_raw_to_bronze.py
+
+      - name: Verificar Bronze
+        run: |
+          echo "===== BRONZE ====="
+          ls -lah bronze
+
+      - name: Publicar Bronze
         uses: actions/upload-artifact@v4
         with:
           name: bronze-data
-          path: bronze/
+          path: |
+            bronze/
+            database/dev_duckdb.duckdb
 
-      - name: Publicar camada Silver
+
+  # ==========================================================
+  # JOB 3 - SILVER
+  # ==========================================================
+  silver:
+
+    name: 03 - Bronze -> Silver
+
+    needs: bronze
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Baixar Bronze
+        uses: actions/download-artifact@v4
+        with:
+          name: bronze-data
+          path: .
+
+      - name: Executar Silver
+        run: |
+          python scripts/02_bronze_to_silver.py
+
+      - name: Verificar Silver
+        run: |
+          echo "===== SILVER ====="
+          ls -lah silver
+
+      - name: Publicar Silver
         uses: actions/upload-artifact@v4
         with:
           name: silver-data
-          path: silver/
+          path: |
+            silver/
+            database/dev_duckdb.duckdb
