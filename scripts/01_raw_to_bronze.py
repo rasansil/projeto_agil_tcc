@@ -1,26 +1,12 @@
 from pathlib import Path
 import pandas as pd
-import sys
 
-# Adiciona a raiz do projeto ao PYTHONPATH
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from utils.database import (
-    get_connection,
-    create_schemas,
-    publish_dataframe,
-    close_connection
-)
+from utils.database import publish_dataframe
 
 RAW_PATH = Path("raw")
 BRONZE_PATH = Path("bronze")
 
 BRONZE_PATH.mkdir(exist_ok=True)
-
-con = get_connection()
-
-create_schemas(con)
 
 for arquivo in RAW_PATH.glob("*.parquet"):
 
@@ -33,12 +19,9 @@ for arquivo in RAW_PATH.glob("*.parquet"):
     df.to_parquet(destino, index=False)
 
     publish_dataframe(
-        con,
         df,
         "bronze",
         arquivo.stem
     )
 
-close_connection(con)
-
-print("Camada Bronze criada com sucesso.")
+print("Bronze criada com sucesso.")
