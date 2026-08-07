@@ -1,26 +1,35 @@
 from sqlalchemy import create_engine
 import pandas as pd
 
-SERVER = "localhost"
-DATABASE = "ProjetoAgilTCC"
+# ======================================
+# CONFIGURAÇÃO MYSQL
+# ======================================
 
-CONNECTION_STRING = (
-    f"mssql+pyodbc://{SERVER}/{DATABASE}"
-    "?driver=ODBC+Driver+17+for+SQL+Server"
-    "&trusted_connection=yes"
+HOST = "localhost"
+PORT = 3306
+
+DATABASE = "projeto_agil_tcc"
+
+USER = "root"
+PASSWORD = "SUA_SENHA"
+
+engine = create_engine(
+    f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
 )
 
-engine = create_engine(CONNECTION_STRING)
-
+# ======================================
+# PUBLICAR DATAFRAME
+# ======================================
 
 def publish_dataframe(df: pd.DataFrame,
-                      schema: str,
-                      table: str):
+                      camada: str,
+                      tabela: str):
+
+    nome_tabela = f"{camada}_{tabela}"
 
     df.to_sql(
-        name=table,
+        nome_tabela,
         con=engine,
-        schema=schema,
         if_exists="replace",
         index=False
     )
