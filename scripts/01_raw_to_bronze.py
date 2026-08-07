@@ -19,9 +19,9 @@ for arquivo in RAW_PATH.glob("*.parquet"):
     df.to_parquet(destino, index=False)
 
     publish_dataframe(
-        df,
-        "bronze",
-        arquivo.stem
+        df=df,
+        camada="bronze",
+        tabela=arquivo.stem
     )
 
 print("Bronze criada com sucesso.")
