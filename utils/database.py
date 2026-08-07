@@ -1,27 +1,44 @@
-from sqlalchemy import create_engine, text
+from pathlib import Path
+
+import yaml
 import pandas as pd
 
-# ==========================================
-# Configuração do Banco
-# ==========================================
+from sqlalchemy import create_engine, text
 
-HOST = "127.0.0.1"
-PORT = 3306
+# ======================================================
+# Carregar configuração
+# ======================================================
 
-DATABASE = "projeto_agil_tcc"
+CONFIG_FILE = Path("config/database.yaml")
 
-USER = "root"
-PASSWORD = "SUA_SENHA"
+with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+    config = yaml.safe_load(f)
+
+# ======================================================
+# Configurações do banco
+# ======================================================
+
+HOST = config["host"]
+PORT = config["port"]
+
+DATABASE = config["database"]
+
+USER = config["user"]
+PASSWORD = config["password"]
+
+# ======================================================
+# Engine SQLAlchemy
+# ======================================================
 
 ENGINE = create_engine(
     f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}",
-    pool_pre_ping=True
+    pool_pre_ping=True,
+    echo=False
 )
 
-
-# ==========================================
-# Publica DataFrame
-# ==========================================
+# ======================================================
+# Publicar DataFrame
+# ======================================================
 
 def publish_dataframe(
     df: pd.DataFrame,
@@ -32,30 +49,54 @@ def publish_dataframe(
     nome_tabela = f"{camada}_{tabela}"
 
     df.to_sql(
-        nome_tabela,
-        ENGINE,
+        name=nome_tabela,
+        con=ENGINE,
         if_exists="replace",
         index=False
     )
 
+# ======================================================
+# Ler tabela
+# ======================================================
 
-# ==========================================
-# Executa SQL
-# ==========================================
+def read_table(nome_tabela):
+
+    return pd.read_sql(
+        f"SELECT * FROM {nome_tabela}",
+        ENGINE
+    )
+
+# ======================================================
+# Executar SQL
+# ======================================================
 
 def execute_sql(sql):
 
     with ENGINE.begin() as conn:
         conn.execute(text(sql))
 
+# ======================================================
+# Verificar existência da tabela
+# ======================================================
 
-# ==========================================
-# Ler tabela
-# ==========================================
+def table_exists(nome_tabela):
 
-def read_table(nome):
+    sql = f"""
+    SELECT COUNT(*)
+    FROM information_schema.tables
+    WHERE table_schema = '{DATABASE}'
+      AND table_name = '{nome_tabela}'
+    """
 
-    return pd.read_sql(
-        f"SELECT * FROM {nome}",
-        ENGINE
+    with ENGINE.begin() as conn:
+        return conn.execute(text(sql)).scalar() > 0
+
+# ======================================================
+# Excluir tabela
+# ======================================================
+
+def drop_table(nome_tabela):
+
+    execute_sql(
+        f"DROP TABLE IF EXISTS {nome_tabela}"
     )
