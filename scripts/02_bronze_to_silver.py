@@ -34,7 +34,7 @@ print("=" * 60)
 # Processamento
 # ======================================================
 
-arquivos = list(RAW_PATH.glob("*"))
+arquivos = list(RAW_PATH.glob("*.*"))
 
 if len(arquivos) == 0:
     print("Nenhum arquivo encontrado na camada Raw.")
